@@ -1,3 +1,4 @@
+using Unity.VectorGraphics;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -6,26 +7,12 @@ namespace TeamTangle.CharacterController
 
     public class Player : MonoBehaviour
     {
+        public PlayerStats playerStats;
 
-        public bool useAdept = true;
-        public float playerHeight = 1f;
-        public float rayCastOffset = 0.5f;
-        public float moveSpeed = 5f;
+        public Collider2D feetCollider;
 
-        public float acceleration = 10f;
-        public float gravity = -9.81f;
-
-        public float fallMultiplier = 2.5f;
-
-
-        public LayerMask groundLayer;
-        public float groundCheckLength = 0.1f;
-        public float jumpForce = 5f;
-
-        public float jumpBufferTime = 0.2f;
         float jumpBufferCounter = 0f;
 
-        public float coyoteTime = 0.2f;
         float coyoteTimeCounter = 0f;
 
         private float verticalVelocity = 0f;
@@ -36,9 +23,13 @@ namespace TeamTangle.CharacterController
 
         private Transform currentGround;
 
+        private Transform currentGroundPosition;
+
         private Vector3 lastGroundedPosition;
 
         private PlayerAdept playerAdept;
+
+        private RaycastHit2D raycastHit2D;
 
         void Start()
         {
@@ -49,8 +40,7 @@ namespace TeamTangle.CharacterController
         void Update()
         {
             CheckforGround();
-            followGround();
-            if (useAdept)
+            if (playerStats.canControl)
             {
                 Jump();
                 handleHorizontalMovement();
@@ -58,6 +48,7 @@ namespace TeamTangle.CharacterController
             snapToGround();
             applyGravity();
             Move();
+            followGround();
 
         }
 
@@ -65,33 +56,23 @@ namespace TeamTangle.CharacterController
         {
             if (verticalVelocity < 0)
             {
-                verticalVelocity += gravity * fallMultiplier * Time.deltaTime;
+                verticalVelocity += playerStats.gravity * playerStats.fallMultiplier * Time.deltaTime;
             }
             else
             {
-                verticalVelocity += gravity * Time.deltaTime;
+                verticalVelocity += playerStats.gravity * Time.deltaTime;
             }
         }
 
         void CheckforGround()
         {
-            Vector2 leftFoot = new Vector2(transform.position.x - rayCastOffset, transform.position.y - rayCastOffset);
-            Vector2 rightFoot = new Vector2(transform.position.x + rayCastOffset, transform.position.y - rayCastOffset);
-
-            RaycastHit2D leftHit = Physics2D.Raycast(leftFoot, Vector2.down, groundCheckLength, groundLayer);
-            RaycastHit2D rightHit = Physics2D.Raycast(rightFoot, Vector2.down, groundCheckLength, groundLayer);
-
-           isGrounded  = false;
-           if(leftHit.collider != null && leftHit.collider.gameObject != gameObject)
+            raycastHit2D = Physics2D.BoxCast(feetCollider.bounds.center, feetCollider.bounds.size, 0f, Vector2.down, playerStats.groundCheckLength, playerStats.groundLayer);
+            
+            // Only consider grounded if we're moving downward or stationary (not mid-jump)
+            if(raycastHit2D.collider != null && verticalVelocity <= 0.1f)
             {
                 isGrounded = true;
-                currentGround = leftHit.collider.transform;
-                
-            }
-            else if (rightHit.collider != null && rightHit.collider.gameObject != gameObject)
-            {
-                isGrounded = true;
-                currentGround = rightHit.collider.transform;
+                currentGround = raycastHit2D.collider.transform;
             }
             else
             {
@@ -100,53 +81,49 @@ namespace TeamTangle.CharacterController
             }
         }
 
-        void OnDrawGizmos()
-        {
-            Gizmos.color = Color.red;
-            Vector2 leftFoot = new Vector2(transform.position.x - rayCastOffset, transform.position.y - rayCastOffset);
-            Vector2 rightFoot = new Vector2(transform.position.x + rayCastOffset, transform.position.y - rayCastOffset);
-
-            Gizmos.DrawLine(leftFoot, leftFoot + Vector2.down * groundCheckLength);
-            Gizmos.DrawLine(rightFoot, rightFoot + Vector2.down * groundCheckLength);
-
-            Gizmos.DrawLine(transform.position, transform.position + Vector3.down * playerHeight / 2);
-        }
 
         void snapToGround()
         {
-            if (isGrounded && verticalVelocity < 0)
+            if (isGrounded && verticalVelocity <= 0 && raycastHit2D.collider != null)
             {
-                verticalVelocity = 0f;
-
-
-                RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, playerHeight / 2, groundLayer);
-                if (hit.collider != null && hit.collider.gameObject != gameObject)
+                // Calculate distance to ground
+                float distanceToGround = raycastHit2D.distance;
+                
+                // Only snap if we're very close (prevents snapping from far away)
+                if(distanceToGround < 0.05f)
                 {
-                    float top = hit.collider.bounds.max.y;
-                    transform.position = new Vector3(transform.position.x, top + playerHeight / 2, transform.position.z);
+                    verticalVelocity = 0f;
+                    float targetY = raycastHit2D.collider.bounds.max.y + playerStats.playerHeight / 2;
+                    transform.position = new Vector3(transform.position.x, targetY, transform.position.z);
                 }
-
             }
+        }
+
+        void OnDrawGizmos()
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireCube(feetCollider.bounds.center + Vector3.down * playerStats.groundCheckLength, feetCollider.bounds.size);
         }
 
         void followGround()
         {
-           if(currentGround != null && currentGround.gameObject.layer == LayerMask.NameToLayer("PlayerHead"))
-           {
-               Vector3 groundMovement = currentGround.position - lastGroundedPosition;
-               transform.position += new  Vector3(groundMovement.x, 0, 0);
-           }
-
-           if(currentGround != null)
+            if (currentGround != null && currentGround.gameObject.layer == LayerMask.NameToLayer("PlayerBody"))
             {
-                lastGroundedPosition = currentGround.position;
+                Vector3 groundMovement = currentGroundPosition.position - lastGroundedPosition;
+                Debug.Log("Ground Movement: " + groundMovement);
+                transform.position += new Vector3(groundMovement.x, 0, 0);
+            }
+
+            if (currentGround != null)
+            {
+                lastGroundedPosition = currentGroundPosition.position;
             }
         }
 
         void handleHorizontalMovement()
         {
             Vector2 moveInput = playerAdept.Move;
-            horizontalVelocity = Mathf.Lerp(horizontalVelocity, moveInput.x * moveSpeed, acceleration * Time.deltaTime);
+            horizontalVelocity = Mathf.Lerp(horizontalVelocity, moveInput.x * playerStats.moveSpeed, playerStats.acceleration * Time.deltaTime);
             //transform.position += new Vector3(horizontalVelocity, 0, 0) * Time.deltaTime;
         }
 
@@ -160,7 +137,7 @@ namespace TeamTangle.CharacterController
         {
             if (isGrounded)
             {
-                coyoteTimeCounter = coyoteTime;
+                coyoteTimeCounter = playerStats.coyoteTime;
             }
             else
             {
@@ -169,7 +146,7 @@ namespace TeamTangle.CharacterController
 
             if (playerAdept.JumpPressed)
             {
-                jumpBufferCounter = jumpBufferTime;
+                jumpBufferCounter = playerStats.jumpBufferTime;
             }
             else
             {
@@ -178,7 +155,7 @@ namespace TeamTangle.CharacterController
 
             if (coyoteTimeCounter > 0f && jumpBufferCounter > 0f)
             {
-                verticalVelocity = jumpForce;
+                verticalVelocity = playerStats.jumpForce;
                 coyoteTimeCounter = 0f;
                 jumpBufferCounter = 0f;
             }
