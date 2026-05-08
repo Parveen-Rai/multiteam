@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4562a7aba8f79054f9ad15e7cdde47a7, type: 3}
-  m_Name: PlayerControl
+  m_Name: PlayerControl 2
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
-  canControl: 1
+  canControl: 0
   playerHeight: 1
   moveSpeed: 5
   acceleration: 10
@@ -22,7 +22,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 192
   groundCheckLength: 0
-  jumpForce: 7.28
+  jumpForce: 7.03
   jumpBufferTime: 0.2
   coyoteTime: 0.2
   groundStickTime: 0.1

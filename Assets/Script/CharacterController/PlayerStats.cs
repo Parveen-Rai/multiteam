@@ -33,6 +33,6 @@ public class PlayerStats : ScriptableObject
     [Range(0.1f, 1f)]
     public float coyoteTime = 0.2f;
 
-    
+    public float groundStickTime = 0.1f;
 
 }

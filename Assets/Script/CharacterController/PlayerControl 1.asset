@@ -25,3 +25,4 @@ MonoBehaviour:
   jumpForce: 7.03
   jumpBufferTime: 0.2
   coyoteTime: 0.2
+  groundStickTime: 0.1
