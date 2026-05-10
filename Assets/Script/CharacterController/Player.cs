@@ -1,3 +1,4 @@
+using System;
 using Unity.VectorGraphics;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -10,6 +11,8 @@ namespace TeamTangle.CharacterController
         public PlayerStats playerStats;
 
         public Collider2D feetCollider;
+
+        public Collider2D bodyCollider;
 
         float jumpBufferCounter = 0f;
 
@@ -32,6 +35,8 @@ namespace TeamTangle.CharacterController
         private float groundStickTimer = 0f;
 
         private Vector3 totalVelocity = Vector3.zero;
+
+        private RaycastHit2D horizontalHit;
 
 
 
@@ -97,6 +102,25 @@ namespace TeamTangle.CharacterController
             }
         }
 
+        bool checkForBodyCollisions(Vector2 moveInput)
+        {
+            Vector2 boxSize = new Vector2(bodyCollider.bounds.size.x*0.8f, bodyCollider.bounds.size.y * 0.8f);
+            Vector2 direction = moveInput.x > 0 ? Vector3.right : Vector3.left;
+            horizontalHit = Physics2D.BoxCast(
+                bodyCollider.bounds.center,
+                boxSize,
+                0f,
+                direction,
+                Mathf.Abs(moveInput.x),
+                playerStats.HorizontalCollisions
+            );
+            if(horizontalHit.collider != null && horizontalHit.collider.transform.root != transform)
+            {
+               return true;
+            }
+            return false;
+        }
+
 
         void snapToGround()
         {
@@ -119,6 +143,14 @@ namespace TeamTangle.CharacterController
         {
             Gizmos.color = Color.red;
             Gizmos.DrawWireCube(feetCollider.bounds.center + Vector3.down * playerStats.groundCheckLength, feetCollider.bounds.size);
+
+            Gizmos.color = Color.blue;
+            if(playerAdept != null)
+            {
+                Vector2 boxSize = new Vector2(bodyCollider.bounds.size.x*0.8f, bodyCollider.bounds.size.y * 0.8f);
+                Vector3 direction = playerAdept.Move.x > 0 ? Vector3.right : Vector3.left;
+                Gizmos.DrawWireCube(bodyCollider.bounds.center + direction * Mathf.Abs(playerAdept.Move.x), boxSize);
+            }
         }
 
         void handleHorizontalMovement()
@@ -139,8 +171,12 @@ namespace TeamTangle.CharacterController
                     inheritedVelocity = groundPlayer.totalVelocity;
                 }
             }
-
-            totalVelocity    = new Vector3(horizontalVelocity, verticalVelocity, 0) + inheritedVelocity;
+            bool isCollision = checkForBodyCollisions(playerAdept.Move);
+            if(isCollision)      
+            {
+                horizontalVelocity = 0f;
+            }
+            totalVelocity = new Vector3(horizontalVelocity, verticalVelocity, 0) + inheritedVelocity;
             transform.position += totalVelocity * Time.deltaTime;
         }
 

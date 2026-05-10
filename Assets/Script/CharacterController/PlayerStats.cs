@@ -22,6 +22,8 @@ public class PlayerStats : ScriptableObject
 
     public LayerMask groundLayer;
 
+    public LayerMask HorizontalCollisions;
+
     public float groundCheckLength = 0.1f;
 
     [Range(1f, 10f)]

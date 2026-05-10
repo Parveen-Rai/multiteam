@@ -14,8 +14,8 @@ TagManager:
   - Ground
   - PlayerBody
   - PlayerFeet
-  - 
-  - 
+  - Walls
+  - PlayerHead
   - 
   - 
   - 
