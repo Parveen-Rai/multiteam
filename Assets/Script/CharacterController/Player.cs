@@ -101,24 +101,50 @@ namespace TeamTangle.CharacterController
                 }
             }
         }
-
-        bool checkForBodyCollisions(Vector2 moveInput)
+        float ResolveHorizontalCollisions(float moveX)
         {
-            Vector2 boxSize = new Vector2(bodyCollider.bounds.size.x*0.8f, bodyCollider.bounds.size.y * 0.8f);
-            Vector2 direction = moveInput.x > 0 ? Vector3.right : Vector3.left;
-            horizontalHit = Physics2D.BoxCast(
+            if (Mathf.Abs(moveX) < 0.0001f)
+                return moveX;
+
+            float skinWidth = 0.07f;
+
+            Vector2 direction = moveX > 0 ? Vector2.right : Vector2.left;
+
+            Vector2 boxSize = new Vector2(
+                bodyCollider.bounds.size.x,
+                bodyCollider.bounds.size.y
+            );
+
+            RaycastHit2D[] hits = Physics2D.BoxCastAll(
                 bodyCollider.bounds.center,
                 boxSize,
                 0f,
                 direction,
-                Mathf.Abs(moveInput.x),
+                Mathf.Abs(moveX) + skinWidth,
                 playerStats.HorizontalCollisions
             );
-            if(horizontalHit.collider != null && horizontalHit.collider.transform.root != transform)
+
+            float allowedMove = moveX;
+
+            foreach (RaycastHit2D hit in hits)
             {
-               return true;
+                if (hit.collider == null)
+                    continue;
+
+                // Ignore self
+                if (hit.collider.transform.root == transform.root)
+                    continue;
+
+                float distance = hit.distance - skinWidth;
+
+                if (distance < Mathf.Abs(allowedMove))
+                {
+                    allowedMove = Mathf.Sign(moveX) *
+                                  Mathf.Max(distance, 0);
+                }
             }
-            return false;
+
+            return allowedMove;
         }
 
 
@@ -145,11 +171,12 @@ namespace TeamTangle.CharacterController
             Gizmos.DrawWireCube(feetCollider.bounds.center + Vector3.down * playerStats.groundCheckLength, feetCollider.bounds.size);
 
             Gizmos.color = Color.blue;
-            if(playerAdept != null)
+            if (playerAdept != null)
             {
-                Vector2 boxSize = new Vector2(bodyCollider.bounds.size.x*0.8f, bodyCollider.bounds.size.y * 0.8f);
+                float skinWidth = 0.07f;
+                Vector2 boxSize = new Vector2(bodyCollider.bounds.size.x, bodyCollider.bounds.size.y);
                 Vector3 direction = playerAdept.Move.x > 0 ? Vector3.right : Vector3.left;
-                Gizmos.DrawWireCube(bodyCollider.bounds.center + direction * Mathf.Abs(playerAdept.Move.x), boxSize);
+                Gizmos.DrawWireCube(bodyCollider.bounds.center + direction *  (Mathf.Abs(playerAdept.Move.x) + skinWidth), boxSize);
             }
         }
 
@@ -165,18 +192,24 @@ namespace TeamTangle.CharacterController
 
             if (currentGround != null)
             {
-                Player groundPlayer = currentGround.GetComponent<Player>(); 
-                if(groundPlayer != null)
+                Player groundPlayer = currentGround.GetComponent<Player>();
+
+                if (groundPlayer != null)
                 {
                     inheritedVelocity = groundPlayer.totalVelocity;
                 }
             }
-            bool isCollision = checkForBodyCollisions(playerAdept.Move);
-            if(isCollision)      
-            {
-                horizontalVelocity = 0f;
-            }
-            totalVelocity = new Vector3(horizontalVelocity, verticalVelocity, 0) + inheritedVelocity;
+
+            float moveX = horizontalVelocity * Time.deltaTime;
+
+            moveX = ResolveHorizontalCollisions(moveX);
+
+            totalVelocity = new Vector3(
+                moveX / Time.deltaTime,
+                verticalVelocity,
+                0
+            ) + inheritedVelocity;
+
             transform.position += totalVelocity * Time.deltaTime;
         }
 
