@@ -6,7 +6,7 @@ using UnityEngine;
 namespace TeamTangle.CharacterController
 {
 
-    public class Player : MonoBehaviour
+    public class Player : KinematicBody
     {
         public PlayerStats playerStats;
 
@@ -18,26 +18,10 @@ namespace TeamTangle.CharacterController
 
         float coyoteTimeCounter = 0f;
 
-        private float verticalVelocity = 0f;
-
-        private float horizontalVelocity = 0f;
-
-        private bool isGrounded = false;
-
-        private Transform currentGround;
-
         private PlayerAdept playerAdept;
 
-        private RaycastHit2D raycastHit2D;
 
         private Player groundPlayer;
-
-        private float groundStickTimer = 0f;
-
-        private Vector3 totalVelocity = Vector3.zero;
-
-        private RaycastHit2D horizontalHit;
-
 
 
         void Start()
@@ -48,58 +32,15 @@ namespace TeamTangle.CharacterController
         // Update is called once per frame
         void Update()
         {
-            CheckforGround();
+            CheckforGround(feetCollider, playerStats.groundCheckLength, playerStats.groundLayer, playerStats.groundStickTime);
             if (playerStats.canControl)
             {
                 Jump();
                 handleHorizontalMovement();
             }
-            snapToGround();
-            applyGravity();
+            snapToGround( playerStats.playerHeight);
+            ApplyGravity(playerStats.gravity, playerStats.fallMultiplier);
             Move();
-        }
-
-        void applyGravity()
-        {
-            if (verticalVelocity < 0)
-            {
-                verticalVelocity += playerStats.gravity * playerStats.fallMultiplier * Time.deltaTime;
-            }
-            else
-            {
-                verticalVelocity += playerStats.gravity * Time.deltaTime;
-            }
-        }
-
-        void CheckforGround()
-        {
-            raycastHit2D = Physics2D.BoxCast(
-                feetCollider.bounds.center,
-                feetCollider.bounds.size,
-                0f,
-                Vector2.down,
-                playerStats.groundCheckLength,
-                playerStats.groundLayer
-            );
-
-            if (raycastHit2D.collider != null)
-            {
-                isGrounded = true;
-
-                groundStickTimer = playerStats.groundStickTime;
-
-                currentGround = raycastHit2D.collider.transform.root;
-            }
-            else
-            {
-                groundStickTimer -= Time.deltaTime;
-
-                if (groundStickTimer <= 0f)
-                {
-                    isGrounded = false;
-                    currentGround = null;
-                }
-            }
         }
         float ResolveHorizontalCollisions(float moveX)
         {
@@ -148,23 +89,6 @@ namespace TeamTangle.CharacterController
         }
 
 
-        void snapToGround()
-        {
-            if (isGrounded && verticalVelocity <= 0 && raycastHit2D.collider != null)
-            {
-                // Calculate distance to ground
-                float distanceToGround = raycastHit2D.distance;
-
-                // Only snap if we're very close (prevents snapping from far away)
-                if (distanceToGround < 0.05f)
-                {
-                    verticalVelocity = 0f;
-                    float targetY = raycastHit2D.collider.bounds.max.y + playerStats.playerHeight / 2;
-                    transform.position = new Vector3(transform.position.x, targetY, transform.position.z);
-                }
-            }
-        }
-
         void OnDrawGizmos()
         {
             Gizmos.color = Color.red;
@@ -186,7 +110,7 @@ namespace TeamTangle.CharacterController
             horizontalVelocity = Mathf.Lerp(horizontalVelocity, moveInput.x * playerStats.moveSpeed, playerStats.acceleration * Time.deltaTime);
         }
 
-        void Move()
+        protected override void Move()
         {
             Vector3 inheritedVelocity = Vector3.zero;
 
