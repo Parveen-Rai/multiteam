@@ -20,10 +20,10 @@ MonoBehaviour:
   fallMultiplier: 2.5
   groundLayer:
     serializedVersion: 2
-    m_Bits: 1088
+    m_Bits: 3136
   HorizontalCollisions:
     serializedVersion: 2
-    m_Bits: 640
+    m_Bits: 2688
   groundCheckLength: 0
   jumpForce: 7.28
   jumpBufferTime: 0.2

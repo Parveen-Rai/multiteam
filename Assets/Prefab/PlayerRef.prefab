@@ -66,7 +66,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: -0.10228919}
+  m_Offset: {x: 0, y: 0.047097772}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -76,7 +76,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 0.6614375}
+  m_Size: {x: 1, y: 0.9602117}
   m_EdgeRadius: 0
 --- !u!1 &2935712744828236924
 GameObject:
@@ -167,7 +167,7 @@ GameObject:
   - component: {fileID: 189033412944063576}
   - component: {fileID: 8793883276241503545}
   - component: {fileID: 4179807954910995310}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: PlayerRef
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -353,7 +353,7 @@ GameObject:
   m_Component:
   - component: {fileID: 820806487962387997}
   - component: {fileID: 5208720577416815623}
-  m_Layer: 7
+  m_Layer: 10
   m_Name: HeadCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -409,7 +409,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: -0.13104978}
+  m_Offset: {x: 0, y: -0.0007694438}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -419,5 +419,5 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 0.60391635}
+  m_Size: {x: 1, y: 0.3433556}
   m_EdgeRadius: 0
